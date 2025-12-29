@@ -42,7 +42,7 @@ class DifficultyLevel(int, enum.Enum):
 class Gender(str, enum.Enum):
     MALE = "male"
     FEMALE = "female"
-    NEUTRAL = "neutral"
+   
 
 
 class AvatarStyle(str, enum.Enum):
@@ -186,12 +186,12 @@ class UserStats(Base):
     last_level_up = Column(DateTime, default=None)
     
     # 6 Stats (Solo Leveling inspired)
-    strength = Column(Integer, default=10)  # Fitness category
-    intelligence = Column(Integer, default=10)  # Learning, work, creative
-    vitality = Column(Integer, default=10)  # Health
-    agility = Column(Integer, default=10)  # Productivity, social
-    sense = Column(Integer, default=10)  # Mindfulness, finance
-    willpower = Column(Integer, default=10)  # Personal
+    strength = Column(Integer, default=0)  # Fitness category
+    intelligence = Column(Integer, default=0)  # Learning, work, creative
+    vitality = Column(Integer, default=0)  # Health
+    agility = Column(Integer, default=0)  # Productivity, social
+    sense = Column(Integer, default=0)  # Mindfulness, finance
+    willpower = Column(Integer, default=0)  # Personal
     
     # Currency
     current_gold = Column(Integer, default=0)
