@@ -294,9 +294,200 @@ def award_gold(db, amount: int):
 def update_stat(db, stat_name: str, amount: int = 1):
     """Update a specific stat"""
     stats = get_user_stats(db)
-    current = getattr(stats, stat_name, 10)
+    current = getattr(stats, stat_name, 0)  # FIXED: Default to 0, not 10
     setattr(stats, stat_name, current + amount)
     db.commit()
+
+
+# ============ AVATAR SYSTEM ============
+
+AVATAR_STYLE_CONFIG = {
+    "warrior": {
+        "emoji": "⚔️",
+        "icon": "🛡️",
+        "color": "#ef4444",
+        "bg_gradient": "linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%)",
+        "title": "Warrior",
+        "description": "Strength and discipline"
+    },
+    "mage": {
+        "emoji": "🔮",
+        "icon": "✨",
+        "color": "#8b5cf6",
+        "bg_gradient": "linear-gradient(135deg, #4c1d95 0%, #2e1065 100%)",
+        "title": "Mage",
+        "description": "Intelligence and wisdom"
+    },
+    "rogue": {
+        "emoji": "🗡️",
+        "icon": "👤",
+        "color": "#22c55e",
+        "bg_gradient": "linear-gradient(135deg, #14532d 0%, #052e16 100%)",
+        "title": "Rogue",
+        "description": "Agility and cunning"
+    },
+    "sage": {
+        "emoji": "📿",
+        "icon": "🧘",
+        "color": "#3b82f6",
+        "bg_gradient": "linear-gradient(135deg, #1e3a8a 0%, #172554 100%)",
+        "title": "Sage",
+        "description": "Balance and enlightenment"
+    }
+}
+
+GENDER_ICONS = {
+    "male": "👨",
+    "female": "👩",
+    "neutral": "🧑"
+}
+
+
+def get_rank_info(level: int) -> tuple:
+    """Get rank name and color based on level"""
+    if level < 10:
+        return "E-Rank", "#6b7280"
+    elif level < 20:
+        return "D-Rank", "#22c55e"
+    elif level < 40:
+        return "C-Rank", "#3b82f6"
+    elif level < 60:
+        return "B-Rank", "#8b5cf6"
+    elif level < 80:
+        return "A-Rank", "#f97316"
+    elif level < 100:
+        return "S-Rank", "#ef4444"
+    else:
+        return "Shadow Monarch", "#eab308"
+
+
+def render_avatar_card(profile, stats):
+    """Renders a styled avatar card that works in Streamlit"""
+    avatar_style = profile.avatar_style or "warrior"
+    gender = profile.gender or "neutral"
+    display_name = profile.display_name or "Hunter"
+    level = stats.level or 1
+    current_gold = stats.current_gold or 0
+    
+    style_data = AVATAR_STYLE_CONFIG.get(avatar_style, AVATAR_STYLE_CONFIG['warrior'])
+    gender_icon = GENDER_ICONS.get(gender, '🧑')
+    rank_name, rank_color = get_rank_info(level)
+    
+    avatar_html = f"""
+    <div style="
+        background: {style_data['bg_gradient']};
+        border: 3px solid #d4af37;
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        position: relative;
+        overflow: hidden;
+    ">
+        <div style="position: absolute; top: 10px; left: 10px; font-size: 20px; opacity: 0.3;">✦</div>
+        <div style="position: absolute; top: 10px; right: 10px; font-size: 20px; opacity: 0.3;">✦</div>
+        <div style="position: absolute; bottom: 10px; left: 10px; font-size: 20px; opacity: 0.3;">✦</div>
+        <div style="position: absolute; bottom: 10px; right: 10px; font-size: 20px; opacity: 0.3;">✦</div>
+        
+        <div style="
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px auto;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 4px solid {style_data['color']};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px {style_data['color']}40;
+        ">
+            <span style="font-size: 60px;">{gender_icon}</span>
+        </div>
+        
+        <div style="font-size: 40px; margin-bottom: 10px;">{style_data['emoji']}</div>
+        
+        <h2 style="
+            color: #d4af37;
+            margin: 0 0 5px 0;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        ">{display_name}</h2>
+        
+        <p style="
+            color: {style_data['color']};
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            font-weight: bold;
+        ">{style_data['title']} • Level {level}</p>
+        
+        <div style="
+            display: inline-block;
+            background: {rank_color}20;
+            border: 2px solid {rank_color};
+            color: {rank_color};
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+        ">{rank_name}</div>
+        
+        <div style="
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 2px solid #d4af37;
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        ">
+            <span style="color: #ffd700; font-size: 20px;">💰</span>
+            <span style="color: #ffd700; font-size: 18px; font-weight: bold; margin-left: 10px;">{current_gold:,} Gold</span>
+        </div>
+    </div>
+    """
+    
+    st.markdown(avatar_html, unsafe_allow_html=True)
+
+
+def render_stats_panel(stats):
+    """Renders the 6 stat bars with visual styling"""
+    stat_config = [
+        ("Strength", "strength", "#ef4444", "💪"),
+        ("Intelligence", "intelligence", "#3b82f6", "🧠"),
+        ("Vitality", "vitality", "#22c55e", "❤️"),
+        ("Agility", "agility", "#eab308", "⚡"),
+        ("Sense", "sense", "#a855f7", "👁️"),
+        ("Willpower", "willpower", "#f97316", "🔥"),
+    ]
+    
+    st.markdown("### 📊 Combat Stats")
+    
+    for label, key, color, icon in stat_config:
+        value = getattr(stats, key, 0)  # FIXED: Default to 0
+        bar_width = min(value, 100)
+        
+        st.markdown(f"""
+        <div style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span style="color: #ffffff; font-weight: bold;">{icon} {label}</span>
+                <span style="color: {color}; font-weight: bold;">{value}</span>
+            </div>
+            <div style="
+                background: #1a1a1a;
+                border-radius: 10px;
+                height: 20px;
+                overflow: hidden;
+                border: 1px solid #333;
+            ">
+                <div style="
+                    width: {bar_width}%;
+                    height: 100%;
+                    background: linear-gradient(90deg, {color}80, {color});
+                    border-radius: 10px;
+                    transition: width 0.5s ease;
+                "></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 # ============ PAGE COMPONENTS ============
@@ -412,7 +603,7 @@ def complete_habit(db, habit: Habit):
 # ============ MAIN PAGES ============
 
 def page_dashboard():
-    """Dashboard page - Hero section with XP, daily wisdom, priority quests"""
+    """Dashboard page - Hero section with avatar, XP, daily wisdom, priority quests"""
     db = get_db()
     stats = get_user_stats(db)
     profile = get_user_profile(db)
@@ -428,20 +619,21 @@ def page_dashboard():
     # XP Bar
     render_xp_bar(stats)
     
-    # Stats Row
-    st.markdown("### ⚔️ Your Stats")
-    stat_cols = st.columns(6)
-    stat_icons = {"strength": "⚔️", "intelligence": "🧠", "vitality": "❤️", 
-                  "agility": "⚡", "sense": "👁️", "willpower": "🔥"}
+    st.markdown("---")
     
-    for i, (stat_name, icon) in enumerate(stat_icons.items()):
-        with stat_cols[i]:
-            value = getattr(stats, stat_name, 10)
-            render_stat_card(stat_name, value, icon)
+    # ========== AVATAR + STATS SECTION ==========
+    col_avatar, col_stats = st.columns([1, 1])
+    
+    with col_avatar:
+        st.markdown("### 👤 Your Hunter")
+        render_avatar_card(profile, stats)
+    
+    with col_stats:
+        render_stats_panel(stats)
     
     st.markdown("---")
     
-    # Two column layout
+    # Two column layout for wisdom and quests
     col1, col2 = st.columns([2, 1])
     
     with col1:
@@ -763,9 +955,14 @@ def page_analytics():
     with col2:
         st.markdown("### 🎯 Stats Distribution")
         
+        # FIXED: Use 0 as default instead of accessing potentially None values
         stat_values = [
-            stats.strength, stats.intelligence, stats.vitality,
-            stats.agility, stats.sense, stats.willpower
+            getattr(stats, 'strength', 0) or 0,
+            getattr(stats, 'intelligence', 0) or 0,
+            getattr(stats, 'vitality', 0) or 0,
+            getattr(stats, 'agility', 0) or 0,
+            getattr(stats, 'sense', 0) or 0,
+            getattr(stats, 'willpower', 0) or 0
         ]
         stat_names = ["Strength", "Intelligence", "Vitality", "Agility", "Sense", "Willpower"]
         
@@ -778,7 +975,7 @@ def page_analytics():
         ))
         fig.update_layout(
             polar=dict(
-                radialaxis=dict(visible=True, range=[0, max(stat_values) + 10]),
+                radialaxis=dict(visible=True, range=[0, max(stat_values + [10])]),
                 bgcolor="rgba(0,0,0,0)"
             ),
             showlegend=False,
@@ -1279,6 +1476,7 @@ def page_settings():
     """Settings page - User preferences"""
     db = get_db()
     profile = get_user_profile(db)
+    stats = get_user_stats(db)
     
     st.markdown("## ⚙️ Settings")
     st.markdown("Customize your experience")
@@ -1336,6 +1534,43 @@ def page_settings():
             profile.philosophy_tradition = tradition
             db.commit()
             st.success("Settings saved!")
+    
+    # Reset Stats Section
+    st.markdown("---")
+    st.markdown("### 🔄 Reset Options")
+    
+    with st.expander("⚠️ Danger Zone"):
+        st.warning("These actions cannot be undone!")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Reset Stats to 0", type="secondary"):
+                stats.strength = 0
+                stats.intelligence = 0
+                stats.vitality = 0
+                stats.agility = 0
+                stats.sense = 0
+                stats.willpower = 0
+                db.commit()
+                st.success("Stats reset to 0!")
+                st.rerun()
+        
+        with col2:
+            if st.button("Reset All Progress", type="secondary"):
+                stats.level = 1
+                stats.current_xp = 0
+                stats.total_xp = 0
+                stats.current_gold = 0
+                stats.lifetime_gold = 0
+                stats.strength = 0
+                stats.intelligence = 0
+                stats.vitality = 0
+                stats.agility = 0
+                stats.sense = 0
+                stats.willpower = 0
+                db.commit()
+                st.success("All progress reset!")
+                st.rerun()
 
 
 def page_onboarding():
@@ -1367,6 +1602,10 @@ def page_onboarding():
             [a["id"] for a in AVATAR_STYLES],
             format_func=lambda x: f"{next((a['icon'] for a in AVATAR_STYLES if a['id'] == x), '⚔️')} {next((a['name'] for a in AVATAR_STYLES if a['id'] == x), x)} - {next((a['description'] for a in AVATAR_STYLES if a['id'] == x), '')}")
         
+        st.markdown("### Select your gender")
+        gender = st.selectbox("Gender", ["male", "female", "neutral"],
+            format_func=lambda x: {"male": "👨 Male", "female": "👩 Female", "neutral": "🧑 Neutral"}[x])
+        
         st.markdown("### Select your philosophy tradition")
         tradition = st.selectbox("Tradition",
             [t["id"] for t in PHILOSOPHY_TRADITIONS],
@@ -1382,6 +1621,7 @@ def page_onboarding():
         if submitted and name:
             profile.display_name = name
             profile.avatar_style = avatar
+            profile.gender = gender
             profile.philosophy_tradition = tradition
             profile.focus_areas = focus_areas
             profile.onboarding_completed = True
