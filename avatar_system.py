@@ -1473,5 +1473,183 @@ def main():
             st.rerun()
 
 
+# =============================================================================
+# COMPATIBILITY LAYER FOR APP.PY INTEGRATION
+# =============================================================================
+
+def get_rank_from_level(level: int) -> str:
+    """
+    Convert level to rank letter (E, D, C, B, A, S).
+    Maps evolution tiers to rank letters for compatibility with app.py.
+    """
+    tier = get_evolution_tier(level)
+    rank_map = {
+        1: "E",  # Novice (1-10)
+        2: "D",  # Apprentice (11-25)
+        3: "C",  # Seasoned (26-50)
+        4: "B",  # Elite (51-75)
+        5: "A",  # Legendary (76-100)
+        6: "S"   # Mythic (101+)
+    }
+    return rank_map.get(tier, "E")
+
+
+# Create EVOLUTION_CONFIG for app.py compatibility
+EVOLUTION_CONFIG = {
+    "E": {
+        "title": "Novice Adventurer",
+        "icon": "🌱",
+        "color": "#6B7280",
+        "tier": 1
+    },
+    "D": {
+        "title": "Apprentice Hero",
+        "icon": "⚔️",
+        "color": "#22C55E",
+        "tier": 2
+    },
+    "C": {
+        "title": "Seasoned Champion",
+        "icon": "🛡️",
+        "color": "#3B82F6",
+        "tier": 3
+    },
+    "B": {
+        "title": "Elite Vanquisher",
+        "icon": "👑",
+        "color": "#A855F7",
+        "tier": 4
+    },
+    "A": {
+        "title": "Legendary Master",
+        "icon": "🌟",
+        "color": "#F59E0B",
+        "tier": 5
+    },
+    "S": {
+        "title": "Mythic Ascendant",
+        "icon": "✨",
+        "color": "#EC4899",
+        "tier": 6
+    }
+}
+
+
+# Create CLASS_CONFIG for app.py compatibility
+CLASS_CONFIG = {
+    "warrior": {
+        "name": "Warrior",
+        "icon": "⚔️",
+        "primary": "#ef4444",
+        "secondary": "#dc2626"
+    },
+    "mage": {
+        "name": "Mage",
+        "icon": "🔮",
+        "primary": "#3b82f6",
+        "secondary": "#2563eb"
+    },
+    "rogue": {
+        "name": "Rogue",
+        "icon": "🗡️",
+        "primary": "#1f2937",
+        "secondary": "#111827"
+    },
+    "paladin": {
+        "name": "Paladin",
+        "icon": "🛡️",
+        "primary": "#f59e0b",
+        "secondary": "#d97706"
+    },
+    "ranger": {
+        "name": "Ranger",
+        "icon": "🏹",
+        "primary": "#22c55e",
+        "secondary": "#16a34a"
+    }
+}
+
+
+def get_avatar_image(gender: str = "neutral", avatar_class: str = "warrior", 
+                     level: int = 1, width: int = 200, height: int = 300) -> str:
+    """
+    Generate avatar image URL for compatibility with app.py.
+    Returns a DiceBear URL that can be used directly with st.image().
+    """
+    # Create a basic appearance based on class
+    class_enum = CharacterClass.WARRIOR
+    if avatar_class.lower() == "mage":
+        class_enum = CharacterClass.MAGE
+    elif avatar_class.lower() == "rogue":
+        class_enum = CharacterClass.ROGUE
+    elif avatar_class.lower() == "paladin":
+        class_enum = CharacterClass.PALADIN
+    elif avatar_class.lower() == "ranger":
+        class_enum = CharacterClass.RANGER
+    
+    # Get class defaults
+    class_preset = CLASS_PRESETS.get(class_enum, CLASS_PRESETS[CharacterClass.WARRIOR])
+    defaults = class_preset["defaults"]
+    
+    # Create appearance with class defaults
+    appearance = CharacterAppearance(
+        hair_style=defaults.get("hairStyle", "short"),
+        hair_color=defaults.get("hairColor", "2c1810"),
+        eyes_style=defaults.get("eyesStyle", "eyes"),
+        mouth_style=defaults.get("mouthStyle", "smile"),
+        shirt_style=defaults.get("shirtStyle", "crew"),
+        shirt_color=defaults.get("shirtColor", "3b82f6")
+    )
+    
+    # Generate URL
+    return generate_avatar_url(appearance, size=width)
+
+
+def render_avatar_streamlit(profile, stats, size: int = 200):
+    """
+    Render avatar in Streamlit for compatibility with app.py.
+    This is a simplified version that displays the avatar.
+    """
+    gender = getattr(profile, 'gender', 'neutral')
+    avatar_class = getattr(profile, 'avatar_style', 'warrior')
+    level = getattr(stats, 'level', 1)
+    
+    avatar_url = get_avatar_image(
+        gender=gender,
+        avatar_class=avatar_class,
+        level=level,
+        width=size,
+        height=size
+    )
+    
+    st.image(avatar_url, width=size)
+
+
+def render_stats_streamlit(stats, profile=None):
+    """
+    Render character stats in Streamlit for compatibility with app.py.
+    """
+    level = getattr(stats, 'level', 1)
+    current_xp = getattr(stats, 'current_xp', 0)
+    xp_for_next_level = getattr(stats, 'xp_for_next_level', 100)
+    current_gold = getattr(stats, 'current_gold', 0)
+    
+    # Display stats
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Level", level)
+    
+    with col2:
+        st.metric("XP", f"{current_xp}/{xp_for_next_level}")
+    
+    with col3:
+        st.metric("Gold", f"💰 {current_gold}")
+    
+    # XP Progress bar
+    progress = current_xp / xp_for_next_level if xp_for_next_level > 0 else 0
+    st.progress(progress)
+
+
 if __name__ == "__main__":
     main()
