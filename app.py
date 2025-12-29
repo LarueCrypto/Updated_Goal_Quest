@@ -300,118 +300,84 @@ def update_stat(db, stat_name: str, amount: int = 1):
 
 
 # ============ AVATAR SYSTEM ============
-
-AVATAR_STYLE_CONFIG = {
-    "warrior": {
-        "emoji": "⚔️",
-        "icon": "🛡️",
-        "color": "#ef4444",
-        "title": "Warrior",
-        "description": "Strength and discipline"
-    },
-    "mage": {
-        "emoji": "🔮",
-        "icon": "✨",
-        "color": "#8b5cf6",
-        "title": "Mage",
-        "description": "Intelligence and wisdom"
-    },
-    "rogue": {
-        "emoji": "🗡️",
-        "icon": "👤",
-        "color": "#22c55e",
-        "title": "Rogue",
-        "description": "Agility and cunning"
-    },
-    "sage": {
-        "emoji": "📿",
-        "icon": "🧘",
-        "color": "#3b82f6",
-        "title": "Sage",
-        "description": "Balance and enlightenment"
-    }
-}
-
-GENDER_ICONS = {
-    "male": "👨",
-    "female": "👩",
-    "neutral": "🧑"
-}
-
-
-def get_rank_info(level: int) -> tuple:
-    """Get rank name and color based on level"""
-    if level < 10:
-        return "E-Rank", "#6b7280"
-    elif level < 20:
-        return "D-Rank", "#22c55e"
-    elif level < 40:
-        return "C-Rank", "#3b82f6"
-    elif level < 60:
-        return "B-Rank", "#8b5cf6"
-    elif level < 80:
-        return "A-Rank", "#f97316"
-    elif level < 100:
-        return "S-Rank", "#ef4444"
-    else:
-        return "Shadow Monarch", "#eab308"
+# Import the full-body avatar system
+from avatar_system import (
+    get_avatar_image, 
+    render_avatar_streamlit, 
+    render_stats_streamlit,
+    get_rank_from_level,
+    EVOLUTION_CONFIG,
+    CLASS_CONFIG
+)
 
 
 def render_avatar_card(profile, stats):
-    """Renders a styled avatar card using Streamlit native components"""
-    avatar_style = profile.avatar_style or "warrior"
+    """Renders the full-body evolving avatar using st.image() - 100% reliable"""
     gender = profile.gender or "neutral"
-    display_name = profile.display_name or "Hunter"
+    avatar_class = profile.avatar_style or "warrior"
     level = stats.level or 1
+    display_name = profile.display_name or "Hunter"
     current_gold = stats.current_gold or 0
     
-    style_data = AVATAR_STYLE_CONFIG.get(avatar_style, AVATAR_STYLE_CONFIG['warrior'])
-    gender_icon = GENDER_ICONS.get(gender, '🧑')
-    rank_name, rank_color = get_rank_info(level)
+    # Get evolution info
+    rank = get_rank_from_level(level)
+    evolution = EVOLUTION_CONFIG.get(rank, EVOLUTION_CONFIG["E"])
+    class_data = CLASS_CONFIG.get(avatar_class, CLASS_CONFIG["warrior"])
     
-    # Use a container with custom styling
-    with st.container():
-        # Avatar display using columns for centering
-        st.markdown(f"""
-        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%); border: 3px solid #d4af37; border-radius: 20px; margin-bottom: 10px;">
-            <div style="font-size: 80px; margin-bottom: 10px;">{gender_icon}</div>
-            <div style="font-size: 40px; margin-bottom: 5px;">{style_data['emoji']}</div>
-            <h2 style="color: #d4af37; margin: 10px 0 5px 0; font-size: 24px;">{display_name}</h2>
-            <p style="color: {style_data['color']}; margin: 5px 0; font-weight: bold;">{style_data['title']} • Level {level}</p>
-            <span style="display: inline-block; background: {rank_color}33; border: 2px solid {rank_color}; color: {rank_color}; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; margin: 10px 0;">{rank_name}</span>
-            <div style="background: #1a1a1a; border: 2px solid #d4af37; border-radius: 10px; padding: 10px; margin-top: 15px;">
-                <span style="color: #ffd700; font-size: 18px;">💰 {current_gold:,} Gold</span>
-            </div>
+    # Generate the full-body avatar as base64 image
+    avatar_uri = get_avatar_image(
+        gender=gender,
+        avatar_class=avatar_class,
+        level=level,
+        width=200,
+        height=300
+    )
+    
+    # Display avatar image - this ALWAYS works in Streamlit
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image(avatar_uri, use_container_width=True)
+    
+    # Character info card below avatar
+    st.markdown(f"""
+    <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #1a1a2e, #0f0f1a); border: 2px solid #d4af37; border-radius: 15px; margin-top: 10px;">
+        <h2 style="color: #d4af37; margin: 0 0 5px 0;">{display_name}</h2>
+        <p style="color: {class_data['primary']}; font-weight: bold; margin: 5px 0;">
+            {avatar_class.title()} • Level {level}
+        </p>
+        <span style="display: inline-block; background: #6b728033; border: 2px solid #6b7280; color: #9ca3af; padding: 3px 12px; border-radius: 15px; font-size: 14px; margin: 5px 0;">
+            {rank}-Rank {evolution['title']}
+        </span>
+        <div style="margin-top: 10px; padding: 8px; background: #1a1a1a; border: 1px solid #d4af37; border-radius: 8px;">
+            <span style="color: #ffd700;">💰 {current_gold:,} Gold</span>
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def render_stats_panel(stats):
     """Renders the 6 stat bars using Streamlit native components"""
     stat_config = [
-        ("Strength", "strength", "#ef4444", "💪"),
-        ("Intelligence", "intelligence", "#3b82f6", "🧠"),
-        ("Vitality", "vitality", "#22c55e", "❤️"),
-        ("Agility", "agility", "#eab308", "⚡"),
-        ("Sense", "sense", "#a855f7", "👁️"),
-        ("Willpower", "willpower", "#f97316", "🔥"),
+        ("Strength", "strength", "💪"),
+        ("Intelligence", "intelligence", "🧠"),
+        ("Vitality", "vitality", "❤️"),
+        ("Agility", "agility", "⚡"),
+        ("Sense", "sense", "👁️"),
+        ("Willpower", "willpower", "🔥"),
     ]
     
     st.markdown("### 📊 Combat Stats")
     
-    for label, key, color, icon in stat_config:
+    for label, key, icon in stat_config:
         value = getattr(stats, key, 0) or 0
         
         # Use Streamlit columns for layout
-        col1, col2 = st.columns([3, 1])
+        col1, col2 = st.columns([4, 1])
         with col1:
-            st.markdown(f"{icon} **{label}**")
+            st.caption(f"{icon} {label}")
+            st.progress(min(value / 100, 1.0))
         with col2:
             st.markdown(f"**{value}**")
-        
-        # Use native progress bar
-        progress_val = min(value / 100, 1.0) if value > 0 else 0
-        st.progress(progress_val)
 
 
 # ============ PAGE COMPONENTS ============
