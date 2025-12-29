@@ -306,7 +306,6 @@ AVATAR_STYLE_CONFIG = {
         "emoji": "⚔️",
         "icon": "🛡️",
         "color": "#ef4444",
-        "bg_gradient": "linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%)",
         "title": "Warrior",
         "description": "Strength and discipline"
     },
@@ -314,7 +313,6 @@ AVATAR_STYLE_CONFIG = {
         "emoji": "🔮",
         "icon": "✨",
         "color": "#8b5cf6",
-        "bg_gradient": "linear-gradient(135deg, #4c1d95 0%, #2e1065 100%)",
         "title": "Mage",
         "description": "Intelligence and wisdom"
     },
@@ -322,7 +320,6 @@ AVATAR_STYLE_CONFIG = {
         "emoji": "🗡️",
         "icon": "👤",
         "color": "#22c55e",
-        "bg_gradient": "linear-gradient(135deg, #14532d 0%, #052e16 100%)",
         "title": "Rogue",
         "description": "Agility and cunning"
     },
@@ -330,7 +327,6 @@ AVATAR_STYLE_CONFIG = {
         "emoji": "📿",
         "icon": "🧘",
         "color": "#3b82f6",
-        "bg_gradient": "linear-gradient(135deg, #1e3a8a 0%, #172554 100%)",
         "title": "Sage",
         "description": "Balance and enlightenment"
     }
@@ -362,7 +358,7 @@ def get_rank_info(level: int) -> tuple:
 
 
 def render_avatar_card(profile, stats):
-    """Renders a styled avatar card that works in Streamlit"""
+    """Renders a styled avatar card using Streamlit native components"""
     avatar_style = profile.avatar_style or "warrior"
     gender = profile.gender or "neutral"
     display_name = profile.display_name or "Hunter"
@@ -373,83 +369,25 @@ def render_avatar_card(profile, stats):
     gender_icon = GENDER_ICONS.get(gender, '🧑')
     rank_name, rank_color = get_rank_info(level)
     
-    avatar_html = f"""
-    <div style="
-        background: {style_data['bg_gradient']};
-        border: 3px solid #d4af37;
-        border-radius: 20px;
-        padding: 30px;
-        text-align: center;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        position: relative;
-        overflow: hidden;
-    ">
-        <div style="position: absolute; top: 10px; left: 10px; font-size: 20px; opacity: 0.3;">✦</div>
-        <div style="position: absolute; top: 10px; right: 10px; font-size: 20px; opacity: 0.3;">✦</div>
-        <div style="position: absolute; bottom: 10px; left: 10px; font-size: 20px; opacity: 0.3;">✦</div>
-        <div style="position: absolute; bottom: 10px; right: 10px; font-size: 20px; opacity: 0.3;">✦</div>
-        
-        <div style="
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 20px auto;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 4px solid {style_data['color']};
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 30px {style_data['color']}40;
-        ">
-            <span style="font-size: 60px;">{gender_icon}</span>
+    # Use a container with custom styling
+    with st.container():
+        # Avatar display using columns for centering
+        st.markdown(f"""
+        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%); border: 3px solid #d4af37; border-radius: 20px; margin-bottom: 10px;">
+            <div style="font-size: 80px; margin-bottom: 10px;">{gender_icon}</div>
+            <div style="font-size: 40px; margin-bottom: 5px;">{style_data['emoji']}</div>
+            <h2 style="color: #d4af37; margin: 10px 0 5px 0; font-size: 24px;">{display_name}</h2>
+            <p style="color: {style_data['color']}; margin: 5px 0; font-weight: bold;">{style_data['title']} • Level {level}</p>
+            <span style="display: inline-block; background: {rank_color}33; border: 2px solid {rank_color}; color: {rank_color}; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; margin: 10px 0;">{rank_name}</span>
+            <div style="background: #1a1a1a; border: 2px solid #d4af37; border-radius: 10px; padding: 10px; margin-top: 15px;">
+                <span style="color: #ffd700; font-size: 18px;">💰 {current_gold:,} Gold</span>
+            </div>
         </div>
-        
-        <div style="font-size: 40px; margin-bottom: 10px;">{style_data['emoji']}</div>
-        
-        <h2 style="
-            color: #d4af37;
-            margin: 0 0 5px 0;
-            font-size: 28px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        ">{display_name}</h2>
-        
-        <p style="
-            color: {style_data['color']};
-            margin: 0 0 10px 0;
-            font-size: 16px;
-            font-weight: bold;
-        ">{style_data['title']} • Level {level}</p>
-        
-        <div style="
-            display: inline-block;
-            background: {rank_color}20;
-            border: 2px solid {rank_color};
-            color: {rank_color};
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 15px;
-        ">{rank_name}</div>
-        
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 2px solid #d4af37;
-            border-radius: 10px;
-            padding: 10px;
-            margin-top: 10px;
-        ">
-            <span style="color: #ffd700; font-size: 20px;">💰</span>
-            <span style="color: #ffd700; font-size: 18px; font-weight: bold; margin-left: 10px;">{current_gold:,} Gold</span>
-        </div>
-    </div>
-    """
-    
-    st.markdown(avatar_html, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
 
 def render_stats_panel(stats):
-    """Renders the 6 stat bars with visual styling"""
+    """Renders the 6 stat bars using Streamlit native components"""
     stat_config = [
         ("Strength", "strength", "#ef4444", "💪"),
         ("Intelligence", "intelligence", "#3b82f6", "🧠"),
@@ -462,32 +400,18 @@ def render_stats_panel(stats):
     st.markdown("### 📊 Combat Stats")
     
     for label, key, color, icon in stat_config:
-        value = getattr(stats, key, 0)  # FIXED: Default to 0
-        bar_width = min(value, 100)
+        value = getattr(stats, key, 0) or 0
         
-        st.markdown(f"""
-        <div style="margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="color: #ffffff; font-weight: bold;">{icon} {label}</span>
-                <span style="color: {color}; font-weight: bold;">{value}</span>
-            </div>
-            <div style="
-                background: #1a1a1a;
-                border-radius: 10px;
-                height: 20px;
-                overflow: hidden;
-                border: 1px solid #333;
-            ">
-                <div style="
-                    width: {bar_width}%;
-                    height: 100%;
-                    background: linear-gradient(90deg, {color}80, {color});
-                    border-radius: 10px;
-                    transition: width 0.5s ease;
-                "></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Use Streamlit columns for layout
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.markdown(f"{icon} **{label}**")
+        with col2:
+            st.markdown(f"**{value}**")
+        
+        # Use native progress bar
+        progress_val = min(value / 100, 1.0) if value > 0 else 0
+        st.progress(progress_val)
 
 
 # ============ PAGE COMPONENTS ============
